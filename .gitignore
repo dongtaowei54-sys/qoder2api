@@ -26,3 +26,8 @@
 .DS_Store
 .idea/
 .vscode/
+
+# local publish/scratch artifacts
+/publish-run.txt
+/dryrun*.txt
+/_*.py

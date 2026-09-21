@@ -1,5 +1,12 @@
 # qoder2api
 
+> **This fork** adds **Codex CLI compatibility patches** and one-click installer scripts on top of upstream.
+>
+> - Getting started with Codex (Chinese): **[QUICKSTART-zh.md](QUICKSTART-zh.md)**
+> - What was patched and why: **[PATCH.md](PATCH.md)**
+>
+> Upstream: [jyao0708/qoder2api](https://github.com/jyao0708/qoder2api) (MIT, Copyright (c) 2026 wangjunyao)
+
 [中文文档](README_CN.md)
 
 Go bridge that exposes Qoder through OpenAI-compatible and Anthropic-compatible local APIs.

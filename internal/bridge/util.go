@@ -50,8 +50,34 @@ func normalizeToolDefinitions(raw json.RawMessage) json.RawMessage {
 				})
 				continue
 			}
+		case "custom":
+			// Codex 的 apply_patch 等 freeform 工具（type=custom）。
+			// 上游只认 {type:"function", function:{...}}，这里用单字符串入参包装。
+			if name := stringValue(item["name"]); name != "" {
+				out = append(out, map[string]any{
+					"type": "function",
+					"function": map[string]any{
+						"name":        name,
+						"description": firstNonBlank(stringValue(item["description"]), "Freeform tool. Pass the complete raw input as the `input` string."),
+						"parameters": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"input": map[string]any{
+									"type":        "string",
+									"description": "Complete raw input for this tool.",
+								},
+							},
+							"required": []any{"input"},
+						},
+					},
+				})
+				continue
+			}
+		default:
+			// 上游只接受 function 类型；local_shell / web_search 等内置类型必须丢弃，
+			// 否则报 "'function' is a required property, expected an object"。
+			continue
 		}
-		out = append(out, item)
 	}
 	buf, err := json.Marshal(out)
 	if err != nil {

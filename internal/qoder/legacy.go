@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"net/url"
@@ -38,6 +39,16 @@ type legacyBackend struct {
 	client   *http.Client
 	template map[string]any
 	session  legacySession
+}
+
+var legacyDebug = strings.TrimSpace(os.Getenv("QODER_DEBUG")) != ""
+
+func truncateForLog(s string, n int) string {
+	s = strings.ReplaceAll(s, "\n", "\\n")
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "...<truncated>"
 }
 
 type legacyIdentity struct {
@@ -241,6 +252,11 @@ func (b *legacyBackend) Stream(ctx context.Context, req CompleteRequest) (Stream
 	if err != nil {
 		return nil, err
 	}
+	if legacyDebug {
+		dumpPath := filepath.Join(os.TempDir(), "qoder2api-last-request.json")
+		_ = os.WriteFile(dumpPath, plainPayload, 0600)
+		log.Printf("[legacy] dumped request body -> %s (%d bytes)", dumpPath, len(plainPayload))
+	}
 	payload := []byte(legacyEncode(plainPayload))
 
 	cosyDate := fmt.Sprintf("%d", time.Now().Unix())
@@ -273,9 +289,24 @@ func (b *legacyBackend) Stream(ctx context.Context, req CompleteRequest) (Stream
 	reqUpstream.Header.Set("x-model-key", req.Model)
 	reqUpstream.Header.Set("x-model-source", "system")
 
+	if legacyDebug {
+		log.Printf("[legacy] --> POST %s", legacyQoderStream)
+		log.Printf("[legacy]     body(%d bytes encoded): %s", len(payload), truncateForLog(string(payload), 400))
+		log.Printf("[legacy]     plain(%d bytes): %s", len(plainPayload), truncateForLog(string(plainPayload), 700))
+		for k, v := range reqUpstream.Header {
+			log.Printf("[legacy]     H %s: %s", k, strings.Join(v, ","))
+		}
+	}
+
 	resp, err := b.client.Do(reqUpstream)
 	if err != nil {
 		return nil, err
+	}
+	if legacyDebug {
+		log.Printf("[legacy] <-- status=%d proto=%s", resp.StatusCode, resp.Proto)
+		for k, v := range resp.Header {
+			log.Printf("[legacy]     RH %s: %s", k, strings.Join(v, ","))
+		}
 	}
 	if resp.StatusCode != http.StatusOK {
 		defer resp.Body.Close()
@@ -292,6 +323,9 @@ func (s *legacyStream) Next() (protocol.DeltaEvent, error) {
 	idleMs := 0
 	for {
 		line, err := s.readLine()
+		if legacyDebug && strings.TrimSpace(line) != "" {
+			log.Printf("[legacy] SSE raw: %s", truncateForLog(strings.TrimSpace(line), 2500))
+		}
 		if err != nil {
 			if err == io.EOF {
 				if strings.TrimSpace(line) == "" {
@@ -500,6 +534,11 @@ func legacyMessages(messages []protocol.Message) []map[string]any {
 	out := make([]map[string]any, 0, len(messages))
 	for _, message := range messages {
 		role := firstNonBlank(message.Role, "user")
+		// Qoder 上游只接受 system/assistant/user/tool/function 五种 role；
+		// Codex（Responses API）使用 developer 承载系统提示，这里归一化为 system。
+		if role == "developer" {
+			role = "system"
+		}
 		switch role {
 		case "user":
 			contents := legacyUserContents(message.Content)
