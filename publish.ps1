@@ -224,7 +224,7 @@ $forkProbe = Probe "$GhPrefix repo view `"$user/$RepoName`""
 $forkCheck = $forkProbe.Text
 if (-not $forkProbe.Ok -or $forkCheck -match 'not found|Could not resolve') {
     Warn "no fork found for $user/$RepoName"
-    Run "gh api repos/$Upstream/forks -X POST --jq .full_name"
+    Run "$GhPrefix api repos/$Upstream/forks -X POST --jq .full_name"
     Start-Sleep -Seconds 5
     Good "forked $Upstream -> $user/$RepoName"
 } else {
@@ -274,11 +274,23 @@ Say "Creating tag $Tag"
 
 $tagExists = (git tag -l $Tag | Out-String).Trim()
 if ($tagExists) {
-    Warn "tag $Tag already exists locally - skipping creation"
+    $tagCommit = (git rev-list -n 1 $Tag | Out-String).Trim()
+    $headCommit = (git rev-parse HEAD | Out-String).Trim()
+    if ($tagCommit -ne $headCommit) {
+        Warn "tag $Tag points at an older commit - moving it to HEAD"
+        Run "git tag -f -a $Tag -m `"Codex CLI one-click build`""
+    } else {
+        Good "tag $Tag already points at HEAD"
+    }
 } else {
     Run "git tag -a $Tag -m `"Codex CLI one-click build`""
 }
-Retry "git push origin $Tag"
+
+# the remote tag may exist from an earlier publish and point elsewhere
+if ((Run "git push origin $Tag" -AllowFail) -ne 0) {
+    Warn "cannot push $Tag normally - force updating the remote tag"
+    Retry "git push --force origin $Tag"
+}
 
 # ---------------------------------------------------------------
 # 9. release + assets
