@@ -28,6 +28,29 @@ param(
 $ErrorActionPreference = 'Stop'
 
 # ---------------------------------------------------------------
+#  Locate gh
+#  GitHub CLI is not always on PATH (a plain PowerShell session
+#  frequently misses it), so look in the usual install locations.
+# ---------------------------------------------------------------
+$GhPrefix = 'gh'
+if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+    $ghCandidates = @(
+        'C:\Program Files\GitHub CLI\gh.exe',
+        'C:\Program Files (x86)\GitHub CLI\gh.exe'
+    )
+    if ($env:ProgramFiles)         { $ghCandidates += (Join-Path $env:ProgramFiles 'GitHub CLI\gh.exe') }
+    if (${env:ProgramFiles(x86)})  { $ghCandidates += (Join-Path ${env:ProgramFiles(x86)} 'GitHub CLI\gh.exe') }
+    if ($env:LOCALAPPDATA)         { $ghCandidates += (Join-Path $env:LOCALAPPDATA 'Programs\GitHub CLI\gh.exe') }
+    foreach ($c in $ghCandidates) {
+        if ($c -and (Test-Path $c)) {
+            # call operator + quotes so paths with spaces survive Invoke-Expression
+            $GhPrefix = '& "' + $c + '"'
+            break
+        }
+    }
+}
+
+# ---------------------------------------------------------------
 #  Proxy
 #  git does NOT read the Windows system proxy, so on a machine that
 #  reaches GitHub through one, `git push` dies with
@@ -40,8 +63,11 @@ if (-not $env:HTTPS_PROXY -and -not $env:https_proxy) {
         if ($reg.ProxyEnable -eq 1 -and $reg.ProxyServer) {
             $ps = $reg.ProxyServer
             if ($ps -notmatch '^https?://') { $ps = "http://$ps" }
+            # set BOTH cases: libcurl prefers the lowercase variable
             $env:HTTPS_PROXY = $ps
             $env:HTTP_PROXY  = $ps
+            $env:https_proxy = $ps
+            $env:http_proxy  = $ps
             Write-Host "[*] Using Windows system proxy: $ps" -ForegroundColor Cyan
         }
     } catch { }
@@ -49,6 +75,17 @@ if (-not $env:HTTPS_PROXY -and -not $env:https_proxy) {
 
 # never sit on an interactive credential prompt
 $env:GIT_TERMINAL_PROMPT = '0'
+
+# GitHub itself must not go through NO_PROXY
+if (-not $env:NO_PROXY) { $env:NO_PROXY = '127.0.0.1,localhost,::1' }
+if (-not $env:no_proxy) { $env:no_proxy = '127.0.0.1,localhost,::1' }
+
+# surface which proxy is actually in effect - a silently-ignored proxy is
+# the single most confusing failure mode here
+if ($env:https_proxy -and $env:HTTPS_PROXY -and $env:https_proxy -ne $env:HTTPS_PROXY) {
+    Write-Host "[!] https_proxy overrides HTTPS_PROXY - aligning them" -ForegroundColor Yellow
+    $env:HTTPS_PROXY = $env:https_proxy
+}
 
 $Upstream  = 'jyao0708/qoder2api'
 $RepoName  = 'qoder2api'
@@ -114,7 +151,7 @@ Write-Host ""
 # ---------------------------------------------------------------
 Say "Checking GitHub authentication"
 
-$ghProbe = Probe 'gh auth status'
+$ghProbe = Probe "$GhPrefix auth status"
 $ghStatus = $ghProbe.Text
 if (-not $ghProbe.Ok) {
     Die @"
@@ -132,7 +169,7 @@ Good "gh is authenticated"
 # ---------------------------------------------------------------
 # 2. who am I
 # ---------------------------------------------------------------
-$userProbe = Probe 'gh api user --jq .login'
+$userProbe = Probe "$GhPrefix api user --jq .login"
 $user = $userProbe.Text.Trim()
 if (-not $user) { Die "could not read your GitHub username via 'gh api user'" }
 Good "GitHub user: $user"
@@ -149,7 +186,7 @@ if (-not $curName)  { Run "git config user.name `"$user`"";  Good "user.name = $
 else                { Good "user.name already set: $curName" }
 
 if (-not $curEmail) {
-    $uid = (Probe 'gh api user --jq .id').Text.Trim()
+    $uid = (Probe "$GhPrefix api user --jq .id").Text.Trim()
     if (-not $uid) { $uid = '0' }
     Run "git config user.email `"${uid}+${user}@users.noreply.github.com`""
     Good "user.email = ${uid}+${user}@users.noreply.github.com"
@@ -183,7 +220,7 @@ if ($dirty) {
 # ---------------------------------------------------------------
 Say "Ensuring fork exists"
 
-$forkProbe = Probe "gh repo view `"$user/$RepoName`""
+$forkProbe = Probe "$GhPrefix repo view `"$user/$RepoName`""
 $forkCheck = $forkProbe.Text
 if (-not $forkProbe.Ok -or $forkCheck -match 'not found|Could not resolve') {
     Warn "no fork found for $user/$RepoName"
@@ -262,12 +299,12 @@ if (Test-Path $NotesFile) {
 $assetList = ($assets | ForEach-Object { "`"$($_.FullName)`"" }) -join ' '
 if (Test-Path $sumFile) { $assetList += " `"$sumFile`"" }
 
-$relProbe = Probe "gh release view $Tag -R `"$user/$RepoName`""
+$relProbe = Probe "$GhPrefix release view $Tag -R `"$user/$RepoName`""
 if ($relProbe.Ok) {
     Warn "release $Tag already exists - uploading assets to it"
-    Retry "gh release upload $Tag $assetList -R `"$user/$RepoName`" --clobber"
+    Retry "$GhPrefix release upload $Tag $assetList -R `"$user/$RepoName`" --clobber"
 } else {
-    Retry "gh release create $Tag $assetList -R `"$user/$RepoName`" --title `"$ReleaseTitle`" $notesArg"
+    Retry "$GhPrefix release create $Tag $assetList -R `"$user/$RepoName`" --title `"$ReleaseTitle`" $notesArg"
 }
 
 # ---------------------------------------------------------------
