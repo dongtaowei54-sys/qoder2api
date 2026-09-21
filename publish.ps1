@@ -50,6 +50,18 @@ if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
     }
 }
 
+# distinguish "gh not installed" from "gh installed but not logged in" -
+# the latter is recoverable with `gh auth login`, the former is not
+if ($GhPrefix -eq 'gh' -and -not (Get-Command gh -ErrorAction SilentlyContinue)) {
+    Write-Host "[x] gh (GitHub CLI) is not installed on this machine." -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Install it first, then log in and re-run this script:" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "    winget install GitHub.cli" -ForegroundColor Red
+    Write-Host "    gh auth login" -ForegroundColor Red
+    exit 1
+}
+
 # ---------------------------------------------------------------
 #  Proxy
 #  git does NOT read the Windows system proxy, so on a machine that
