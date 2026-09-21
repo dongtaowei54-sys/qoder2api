@@ -1,5 +1,13 @@
 # qoder2api
 
+> **本仓库是 fork**，在上游基础上增加了 **Codex CLI 兼容性补丁**与一键安装脚本。
+>
+> - Codex 中文三步上手：**[QUICKSTART-zh.md](QUICKSTART-zh.md)**
+> - 打了哪些补丁、为什么：**[PATCH.md](PATCH.md)**
+> - 预编译包（Windows / macOS / Linux，无需装 Go）：**[Releases](https://github.com/dongtaowei54-sys/qoder2api/releases)**
+>
+> 上游仓库：[jyao0708/qoder2api](https://github.com/jyao0708/qoder2api)（MIT，Copyright (c) 2026 wangjunyao）
+
 [English](README.md)
 
 Go 语言实现的协议桥，将 Qoder 暴露为 OpenAI 兼容和 Anthropic 兼容的本地 API。
@@ -116,6 +124,13 @@ wire_api = "responses"
 base_url = "http://127.0.0.1:8963/v1"
 ```
 
+> **本 fork 的 `setup.ps1` / `setup.sh` 会自动完成上面这步**，并额外生成一个
+> profile，之后用 `codex --profile qoder` 即可，不必手改 config.toml。
+>
+> 另外模型 key 要用 Qoder 内部名 **`qfmodel`**（对外显示为 Qwen3.8-Flash）。
+> 写成 `qwen3.8-flash` 会被上游以 403 拒绝，且错误藏在 HTTP 200 的响应体里，
+> 不容易发现。详见 [QUICKSTART-zh.md](QUICKSTART-zh.md)。
+
 ### Claude Code CLI
 
 ```bash
@@ -130,6 +145,8 @@ ANTHROPIC_BASE_URL=http://127.0.0.1:8963 ANTHROPIC_API_KEY=test-key claude
 - 使用 `QODER_AUTH_JSON` 时建议 `QODER_MODEL=auto`，除非你已验证特定模型 key
 - Anthropic `thinking` 块仅在请求显式启用时暴露
 - `/v1/messages` 对于不使用客户端工具的图片流式传输，使用兼容回退模式：聚合上游结果后发出合法的 Anthropic SSE
+- **Codex 桌面端不可用**：其模型选择器不识别 provider，只改模型名不改 provider。本 fork 的 profile 仅对 **Codex CLI** 生效
+- 上游模型 key 需使用 `qfmodel`；用错的模型名时上游会返回 HTTP 200 但内含 403
 
 ## 开发
 
