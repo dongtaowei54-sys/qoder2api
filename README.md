@@ -2,6 +2,7 @@
 
 > **This fork** adds **Codex CLI compatibility patches** and one-click installer scripts on top of upstream.
 >
+> - **Download prebuilt binaries** (Windows / macOS / Linux, no Go needed): **[Releases](https://github.com/dongtaowei54-sys/qoder2api/releases)**
 > - Getting started with Codex (Chinese): **[QUICKSTART-zh.md](QUICKSTART-zh.md)**
 > - What was patched and why: **[PATCH.md](PATCH.md)**
 >

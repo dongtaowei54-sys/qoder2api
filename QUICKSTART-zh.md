@@ -16,18 +16,23 @@
 
 ---
 
-## 支持平台
+## 下载
 
-| 系统 | 架构 | 包名 |
+> ⚠️ **安装包在 Releases 页面，不在仓库文件里。** GitHub 的代码搜索和文件列表都看不到 Release 附件，
+> 所以搜 `qoder2api-windows-amd64.zip` 是搜不到的——直接从下面点。
+
+**下载页**：<https://github.com/dongtaowei54-sys/qoder2api/releases/latest>
+
+| 系统 | 架构 | 直接下载 |
 |---|---|---|
-| Windows | x64 | `qoder2api-windows-amd64.zip` |
-| Windows | ARM64 | `qoder2api-windows-arm64.zip` |
-| macOS | Apple 芯片 | `qoder2api-darwin-arm64.zip` |
-| macOS | Intel | `qoder2api-darwin-amd64.zip` |
-| Linux | x64 | `qoder2api-linux-amd64.zip` |
-| Linux | ARM64 | `qoder2api-linux-arm64.zip` |
+| Windows | x64 | [qoder2api-windows-amd64.zip](https://github.com/dongtaowei54-sys/qoder2api/releases/download/v0.1.0-codex/qoder2api-windows-amd64.zip) |
+| Windows | ARM64 | [qoder2api-windows-arm64.zip](https://github.com/dongtaowei54-sys/qoder2api/releases/download/v0.1.0-codex/qoder2api-windows-arm64.zip) |
+| macOS | Apple 芯片 | [qoder2api-darwin-arm64.zip](https://github.com/dongtaowei54-sys/qoder2api/releases/download/v0.1.0-codex/qoder2api-darwin-arm64.zip) |
+| macOS | Intel | [qoder2api-darwin-amd64.zip](https://github.com/dongtaowei54-sys/qoder2api/releases/download/v0.1.0-codex/qoder2api-darwin-amd64.zip) |
+| Linux | x64 | [qoder2api-linux-amd64.zip](https://github.com/dongtaowei54-sys/qoder2api/releases/download/v0.1.0-codex/qoder2api-linux-amd64.zip) |
+| Linux | ARM64 | [qoder2api-linux-arm64.zip](https://github.com/dongtaowei54-sys/qoder2api/releases/download/v0.1.0-codex/qoder2api-linux-arm64.zip) |
 
-**不需要装 Go**，包里是编译好的可执行文件。
+**不需要装 Go**，包里是编译好的可执行文件。校验和：[SHA256SUMS.txt](https://github.com/dongtaowei54-sys/qoder2api/releases/download/v0.1.0-codex/SHA256SUMS.txt)
 
 ---
 
@@ -37,8 +42,8 @@
 
 ### 第 1 步：解压 + 一键配置
 
-下载 `qoder2api-windows-amd64.zip`，解压到任意目录（比如 `D:\qoder2api`），
-然后在这个目录打开 PowerShell，执行：
+从上面「[下载](#下载)」表格里下 Windows x64 那个包（`qoder2api-windows-amd64.zip`），
+解压到任意目录（比如 `D:\qoder2api`），然后在这个目录打开 PowerShell，执行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\setup.ps1

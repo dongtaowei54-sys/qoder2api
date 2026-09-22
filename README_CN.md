@@ -4,7 +4,7 @@
 >
 > - Codex 中文三步上手：**[QUICKSTART-zh.md](QUICKSTART-zh.md)**
 > - 打了哪些补丁、为什么：**[PATCH.md](PATCH.md)**
-> - 预编译包（Windows / macOS / Linux，无需装 Go）：**[Releases](https://github.com/dongtaowei54-sys/qoder2api/releases)**
+> - 预编译包（Windows / macOS / Linux，无需装 Go）：**[下载最新版](https://github.com/dongtaowei54-sys/qoder2api/releases/latest)** —— 安装包在 Releases 附件里，仓库文件搜索查不到
 >
 > 上游仓库：[jyao0708/qoder2api](https://github.com/jyao0708/qoder2api)（MIT，Copyright (c) 2026 wangjunyao）
 
